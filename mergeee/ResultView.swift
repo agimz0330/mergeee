@@ -31,7 +31,7 @@ struct ResultView: View {
                         .foregroundColor(orange2)
                 }
                 else{
-                    Text("You Lose")
+                    Text("GameOver")
                         .font((.custom("ARTHISTORYBOOKRegular", size: 50)))
                         .foregroundColor(black10)
                 }

@@ -86,17 +86,13 @@ class Merge: ObservableObject{
         
         turnNum = Int.random(in: 1...highestNum)
         if turnNum > 5{
-//            turnNum -= 5
+            turnNum -= 5
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3){
             self.isLose = self.gameLose()
             if self.highestNum >= 10{ // win
                 self.isWin = true
-            }
-            print(self.highestNum)
-            if self.isWin{
-                print("win")
             }
             if self.isWin || self.isLose{
                 if self.score > self.highestScore{
