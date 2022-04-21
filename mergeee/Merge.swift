@@ -36,12 +36,11 @@ class Merge: ObservableObject{
     @Published var turnNum: Int = 1 // 下一輪要出的數字
     @Published var score: Int = 0
     @Published var highestScore: Int = 0
+    @Published var isWin: Bool = false
+    @Published var isLose: Bool = false
     
     let gridCount: Int = 5 // 5X5
     var highestNum = 1
-    var comboTimes: Int = 1
-    var moveX: Int = 0
-    var moveY: Int = 0
     
     init(){
         // 從UserDefaults存取最高分
@@ -64,14 +63,60 @@ class Merge: ObservableObject{
         grids = Array(repeating: Array(repeating: Grid(), count: gridCount), count: gridCount)
         turnNum = 1 // 下一輪要出的數字
         score = 0
-        comboTimes = 1
+        isWin = false
+        isLose = false
+        highestNum = 1
+        
+        
+    }
+    
+    func disabledClick(row: Int, column: Int) -> Bool{
+        if grids[row][column].value != 0{
+            return true
+        }
+        return false
     }
     
     func clickGrid(row: Int, column: Int){
+        let comboTimes = 1
         appearNum(row: row, column: column, value: turnNum)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2){
-            self.mergeNum(row: row, column: column)
+            self.mergeNum(row: row, column: column, comboTimes: comboTimes)
         }
+        
+        turnNum = Int.random(in: 1...highestNum)
+        if turnNum > 5{
+//            turnNum -= 5
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3){
+            self.isLose = self.gameLose()
+            if self.highestNum >= 10{ // win
+                self.isWin = true
+            }
+            print(self.highestNum)
+            if self.isWin{
+                print("win")
+            }
+            if self.isWin || self.isLose{
+                if self.score > self.highestScore{
+                    self.highestScore = self.score
+                    self.saveHighestScore()
+                }
+            }
+        }
+        
+    }
+    
+    func gameLose() -> Bool{
+        for i in 0..<gridCount{
+            for j in 0..<gridCount{
+                if grids[i][j].value == 0{ // 還有空位
+                    return false
+                }
+            }
+        }
+        return true
     }
     
     func appearNum(row: Int, column: Int, value: Int){
@@ -87,16 +132,17 @@ class Merge: ObservableObject{
         }
     }
     
-    func mergeNum(row: Int, column: Int){
+    func mergeNum(row: Int, column: Int, comboTimes: Int){
         var canMerge = false
         let value = grids[row][column].value
         let addValue = grids[row][column].value + 1
+        var addScore = 0
         // up
         if row-1 >= 0 && value == grids[row-1][column].value{
             grids[row-1][column].moveX = 0
             grids[row-1][column].moveY = 1
             disappearNum(row: row-1, column: column)
-            
+            addScore += 1
             canMerge = true
         }
         // down
@@ -104,7 +150,7 @@ class Merge: ObservableObject{
             grids[row+1][column].moveX = 0
             grids[row+1][column].moveY = -1
             disappearNum(row: row+1, column: column)
-            
+            addScore += 1
             canMerge = true
         }
         // left
@@ -112,7 +158,7 @@ class Merge: ObservableObject{
             grids[row][column-1].moveX = 1
             grids[row][column].moveY = 0
             disappearNum(row: row, column: column-1)
-            
+            addScore += 1
             canMerge = true
         }
         // right
@@ -120,7 +166,7 @@ class Merge: ObservableObject{
             grids[row][column+1].moveX = -1
             grids[row][column+1].moveY = 0
             disappearNum(row: row, column: column+1)
-            
+            addScore += 1
             canMerge = true
         }
         
@@ -129,8 +175,20 @@ class Merge: ObservableObject{
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){
                 self.appearNum(row: row, column: column, value: addValue)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0){
-                self.mergeNum(row: row, column: column)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1){
+                self.mergeNum(row: row, column: column, comboTimes: comboTimes+1)
+            }
+            
+            if addValue > highestNum{
+                highestNum = addValue
+            }
+            
+            addScore = addScore * comboTimes * value
+            
+            for i in 0..<addScore{
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1 * Double(i)){
+                    self.score += 1
+                }
             }
         }
     }
